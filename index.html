@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Reminder & Notes System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .status-bar {
+            background: rgba(255,255,255,0.95);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .current-time {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .next-class {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .schedule-grid {
+            display: grid;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .class-item {
+            background: linear-gradient(45deg, #f8f9ff, #e8ecff);
+            border: 2px solid #e1e8ff;
+            border-radius: 12px;
+            padding: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .class-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102,126,234,0.3);
+            border-color: #667eea;
+        }
+
+        .class-item.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+            animation: glow 2s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 20px rgba(102,126,234,0.5); }
+            to { box-shadow: 0 0 30px rgba(102,126,234,0.8); }
+        }
+
+        .class-time {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .class-name {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .class-details {
+            font-size: 0.8em;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+
+        .notifications {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .notification {
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #ff6b6b;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification.urgent {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+            color: white;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .notes-section {
+            grid-column: 1 / -1;
+        }
+
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .add-note-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .add-note-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .note-card {
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .note-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .note-subject {
+            font-weight: bold;
+            color: #2d3436;
+            font-size: 1.1em;
+        }
+
+        .note-date {
+            font-size: 0.8em;
+            color: #636e72;
+        }
+
+        .note-content {
+            color: #2d3436;
+            line-height: 1.6;
+        }
+
+        .delete-note {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ff;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #ddd;
+            color: #333;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .control-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .control-btn:not(.active) {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .notes-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 Class Reminder System</h1>
+            <p>Stay organized and never miss a class!</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="current-time" id="currentTime">Loading...</div>
+            <div class="next-class" id="nextClass">No upcoming classes</div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn active" id="notificationsToggle">🔔 Notifications ON</button>
+            <button class="control-btn" id="soundToggle">🔊 Sound ON</button>
+            <button class="control-btn" id="clearNotifications">🗑️ Clear Notifications</button>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>📅 Today's Schedule</h2>
+                <div class="schedule-grid" id="scheduleGrid">
+                    <!-- Schedule will be populated here -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🔔 Notifications</h2>
+                <div class="notifications" id="notificationsList">
+                    <div class="notification">
+                        <strong>Welcome!</strong><br>
+                        Your reminder system is now active. You'll receive notifications 1 hour, 30 minutes, 15 minutes, and 5 minutes before each class.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card notes-section">
+                <div class="notes-header">
+                    <h2>📝 Class Notes</h2>
+                    <button class="add-note-btn" id="addNoteBtn">+ Add Note</button>
+                </div>
+                <div class="notes-grid" id="notesGrid">
+                    <!-- Notes will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Note Modal -->
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <h3>Add Class Note</h3>
+            <form id="noteForm">
+                <div class="form-group">
+                    <label for="noteSubject">Subject:</label>
+                    <select id="noteSubject" required>
+                        <option value="">Select Subject</option>
+                        <option value="Soft Skills">Soft Skills</option>
+                        <option value="Audit Lab">Audit Lab</option>
+                        <option value="SQR ASHA">SQR ASHA</option>
+                        <option value="SE Tools">SE Tools</option>
+                        <option value="AI">AI</option>
+                        <option value="Reuse">Reuse</option>
+                        <option value="Audit">Audit</option>
+                        <option value="Software Engineering">Software Engineering</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="noteContent">Notes:</label>
+                    <textarea id="noteContent" placeholder="Enter your class notes, key points, assignments, etc..." required></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" id="cancelNote">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Note</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Class schedule data with your actual schedule
+        const classSchedule = {
+            'MON': [
+                { time: '10:00-10:50', subject: 'Soft Skills', code: 'D1-STS4021-SS-SJT112-ALL', room: 'D1' },
+                { time: '11:40-13:20', subject: 'Audit Lab', code: 'L5-CSE3501-ELA-SJT217-ALL', room: 'L5' },
+                { time: '14:00-14:50', subject: 'SQR ASHA', code: 'A2-SWE3005-TH-SJT825-ALL', room: 'A2' },
+                { time: '15:00-15:50', subject: 'SE Tools (Karthikeyan sir)', code: 'F2-SWE2022-ETH-SJT221-ALL', room: 'F2' },
+                { time: '16:00-16:50', subject: 'AI (Jayalakshmi)', code: 'D2-SWE4010-ETH-SJT221-ALL', room: 'D2' }
+            ],
+            'TUE': [
+                { time: '11:00-11:50', subject: 'Reuse (Jyotish sir)', code: 'TC1-SWE2024-TH-SJT118-ALL', room: 'TC1' },
+                { time: '15:00-15:50', subject: 'Audit (Priya)', code: 'G2-CSE3501-ETH-SJT115-ALL', room: 'G2' }
+            ],
+            'WED': [
+                { time: '08:00-08:50', subject: 'Reuse (Jyotish sir)', code: 'C1-SWE2024-TH-SJT118-ALL', room: 'C1' },
+                { time: '14:00-14:50', subject: 'Software Engineering', code: 'C2-SWE4002-ETH-SJT823-ALL', room: 'C2' },
+                { time: '15:00-15:50', subject: 'SQR ASHA', code: 'A2-SWE3005-TH-SJT825-ALL', room: 'A2' },
+                { time: '16:00-16:50', subject: 'SE Tools (Karthikeyan sir)', code: 'F2-SWE2022-ETH-SJT221-ALL', room: 'F2' },
+                { time: '17:00-17:50', subject: 'AI (Jayalakshmi)', code: 'TD2-SWE4010-ETH-SJT221-ALL', room: 'TD2' }
+            ],
+            'THU': [
+                { time: '08:00-08:50', subject: 'Soft Skills', code: 'D1-STS4021-SS-SJT112-ALL', room: 'D1' },
+                { time: '14:00-14:50', subject: 'AI (Jayalakshmi)', code: 'D2-SWE4010-ETH-SJT221-ALL', room: 'D2' },
+                { time: '15:00-15:50', subject: 'Audit (Priya)', code: 'G2-CSE3501-ETH-SJT115-ALL', room: 'G2' }
+            ],
+            'FRI': [
+                { time: '09:00-09:50', subject: 'Reuse (Jyotish sir)', code: 'C1-SWE2024-TH-SJT118-ALL', room: 'C1' },
+                { time: '12:00-12:50', subject: 'Soft Skills', code: 'TD1-STS4021-SS-SJT112-ALL', room: 'TD1' },
+                { time: '15:00-15:50', subject: 'Software Engineering', code: 'C2-SWE4002-ETH-SJT823-ALL', room: 'C2' },
+                { time: '16:00-16:50', subject: 'SQR ASHA', code: 'TA2-SWE3005-TH-SJT825-ALL', room: 'TA2' }
+            ],
+            'SAT': [],
+            'SUN': []
+        };
+
+        // System state
+        let notificationsEnabled = true;
+        let soundEnabled = true;
+        let notes = [];
+        let activeReminders = new Set();
+        let currentClass = null;
+
+        // Initialize the system
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSystem();
+            loadNotes();
+            updateScheduleDisplay();
+            updateNotesDisplay();
+            setInterval(updateTime, 1000);
+            setInterval(checkReminders, 60000);
+            updateTime();
+            checkReminders();
+        });
+
+        function initializeSystem() {
+            // Request notification permission
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+
+            // Event listeners
+            document.getElementById('notificationsToggle').addEventListener('click', toggleNotifications);
+            document.getElementById('soundToggle').addEventListener('click', toggleSound);
+            document.getElementById('clearNotifications').addEventListener('click', clearNotifications);
+            document.getElementById('addNoteBtn').addEventListener('click', openNoteModal);
+            document.getElementById('cancelNote').addEventListener('click', closeNoteModal);
+            document.getElementById('noteForm').addEventListener('submit', saveNote);
+            
+            // Close modal when clicking outside
+            document.getElementById('noteModal').addEventListener('click', function(e) {
+                if (e.target === this) closeNoteModal();
+            });
+        }
+
+        function loadNotes() {
+            try {
+                const storedNotes = localStorage.getItem('classNotes');
+                if (storedNotes) {
+                    notes = JSON.parse(storedNotes);
+                }
+            } catch (e) {
+                console.error('Error loading notes:', e);
+            }
+        }
+
+        function saveNotesToStorage() {
+            try {
+                localStorage.setItem('classNotes', JSON.stringify(notes));
+            } catch (e) {
+                console.error('Error saving notes:', e);
+            }
+        }
+
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour12: true, 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeString;
+            
+            updateNextClassInfo();
+        }
+
+        function updateNextClassInfo() {
+            const now = new Date();
+            const currentDay = getDayName(now.getDay());
+            const currentTime = now.getHours() * 100 + now.getMinutes();
+            
+            const todaySchedule = classSchedule[currentDay] || [];
+            
+            // Find current class
+            const currentClassItem = todaySchedule.find(cls => {
+                const [startTime, endTime] = cls.time.split('-');
+                const start = parseTime(startTime);
+                const end = parseTime(endTime);
+                return currentTime >= start && currentTime <= end;
+            });
+            
+            if (currentClassItem) {
+                currentClass = currentClassItem;
+                document.getElementById('nextClass').innerHTML = `
+                    <span style="color: #4CAF50;">📚 Current: ${currentClassItem.subject}</span>
+                `;
+                return;
+            }
+            
+            // Find next class
+            const nextClass = todaySchedule.find(cls => {
+                const [startTime] = cls.time.split('-');
+                const start = parseTime(startTime);
+                return currentTime < start;
+            });
+            
+            if (nextClass) {
+                const [startTime] = nextClass.time.split('-');
+                const start = parseTime(startTime);
+                const minutesUntil = Math.floor((start - currentTime) / 100 * 60 + (start % 100 - currentTime % 100));
+                document.getElementById('nextClass').innerHTML = `
+                    📅 Next: ${nextClass.subject} in ${minutesUntil} minutes
+                `;
+            } else {
+                document.getElementById('nextClass').textContent = 'No more classes today';
+            }
+        }
+
+        function updateScheduleDisplay() {
+            const now = new Date();
+            const currentDay = getDayName(now.getDay());
+            const currentTime = now.getHours() * 100 + now.getMinutes();
+            
+            const scheduleGrid = document.getElementById('scheduleGrid');
+            const todaySchedule = classSchedule[currentDay] || [];
+            
+            scheduleGrid.innerHTML = '';
+            
+            if (todaySchedule.length === 0) {
+                scheduleGrid.innerHTML = '<div class="class-item">No classes scheduled for today</div>';
+                return;
+            }
+            
+            todaySchedule.forEach(cls => {
+                const [startTime, endTime] = cls.time.split('-');
+                const start = parseTime(startTime);
+                const end = parseTime(endTime);
+                
+                const classItem = document.createElement('div');
+                classItem.className = 'class-item';
+                
+                if (currentTime >= start && currentTime <= end) {
+                    classItem.classList.add('active');
+                }
+                
+                classItem.innerHTML = `
+                    <div class="class-time">${cls.time}</div>
+                    <div class="class-name">${cls.subject}</div>
+                    <div class="class-details">Room: ${cls.room}</div>
+                `;
+                
+                scheduleGrid.appendChild(classItem);
+            });
+        }
+
+        function checkReminders() {
+            const now = new Date();
+            const currentDay = getDayName(now.getDay());
+            const currentTime = now.getHours() * 100 + now.getMinutes();
+            
+            const todaySchedule = classSchedule[currentDay] || [];
+            
+            todaySchedule.forEach(cls => {
+                const [startTime] = cls.time.split('-');
+                const start = parseTime(startTime);
+                const minutesUntil = Math.floor((start - currentTime) / 100 * 60 + (start % 100 - currentTime % 100));
+                
+                const reminders = [60, 30, 15, 5];
+                
+                reminders.forEach(reminderTime => {
+                    const reminderKey = `${cls.subject}-${cls.time}-${reminderTime}`;
+                    
+                    if (minutesUntil === reminderTime && !activeReminders.has(reminderKey)) {
+                        activeReminders.add(reminderKey);
+                        showReminder(cls, reminderTime);
+                    }
+                });
+                
+                // Check if class just ended
+                if (minutesUntil === -5 && !activeReminders.has(`${cls.subject}-${cls.time}-ended`)) {
+                    activeReminders.add(`${cls.subject}-${cls.time}-ended`);
+                    showPostClassReminder(cls);
+                }
+            });
+        }
+
+        function showReminder(cls, minutesBefore) {
+            if (!notificationsEnabled) return;
+            
+            const message = `${cls.subject} starts in ${minutesBefore} minutes at ${cls.room}`;
+            const urgency = minutesBefore <= 15 ? 'urgent' : '';
+            
+            addNotification(message, urgency);
+            
+            // Browser notification
+            if (Notification.permission === 'granted') {
+                const notification = new Notification(`Class Reminder - ${minutesBefore} minutes`, {
+                    body: message,
+                    icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCI+PHRleHQgeT0iNDAiIGZvbnQtc2l6ZT0iNDAiPvCfjoM8L3RleHQ+PC9zdmc+'
+                });
+                
+                setTimeout(() => notification.close(), 5000);
+            }
+            
+            // Sound notification
+            if (soundEnabled) {
+                playNotificationSound();
+            }
+        }
+
+        function showPostClassReminder(cls) {
+            const message = `${cls.subject} class just ended. Don't forget to add your notes!`;
+            addNotification(message, 'urgent');
+            
+            if (Notification.permission === 'granted') {
+                const notification = new Notification('Add Class Notes', {
+                    body: message,
+                    icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCI+PHRleHQgeT0iNDAiIGZvbnQtc2l6ZT0iNDAiPvCfk608L3RleHQ+PC9zdmc+'
+                });
+                
+                setTimeout(() => notification.close(), 8000);
+            }
+            
+            if (soundEnabled) {
+                playNotificationSound();
+            }
+        }
+
+        function addNotification(message, urgency = '') {
+            const notificationsList = document.getElementById('notificationsList');
+            const notification = document.createElement('div');
+            notification.className = `notification ${urgency}`;
+            notification.innerHTML = `
+                <strong>${new Date().toLocaleTimeString()}</strong><br>
+                ${message}
+            `;
+            
+            notificationsList.insertBefore(notification, notificationsList.firstChild);
+            
+            // Remove old notifications (keep only last 10)
+            while (notificationsList.children.length > 10) {
+                notificationsList.removeChild(notificationsList.lastChild);
+            }
+        }
+
+        function playNotificationSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.error('Error playing sound:', e);
+            }
+        }
+
+        function toggleNotifications() {
+            notificationsEnabled = !notificationsEnabled;
+            const btn = document.getElementById('notificationsToggle');
+            btn.textContent = notificationsEnabled ? '🔔 Notifications ON' : '🔕 Notifications OFF';
+            btn.classList.toggle('active');
+            
+            if (notificationsEnabled && Notification.permission !== 'granted') {
+                Notification.requestPermission();
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundToggle');
+            btn.textContent = soundEnabled ? '🔊 Sound ON' : '🔇 Sound OFF';
+            btn.classList.toggle('active');
+        }
+
+        function clearNotifications() {
+            document.getElementById('notificationsList').innerHTML = `
+                <div class="notification">
+                    <strong>Notifications cleared</strong><br>
+                    Your reminder system is still active.
+                </div>
+            `;
+            activeReminders.clear();
+        }
+
+        function openNoteModal() {
+            document.getElementById('noteModal').style.display = 'block';
+            
+            // Auto-select current class subject if available
+            if (currentClass) {
+                const subjectSelect = document.getElementById('noteSubject');
+                const options = Array.from(subjectSelect.options);
+                const matchingOption = options.find(opt => 
+                    currentClass.subject.toLowerCase().includes(opt.value.toLowerCase())
+                );
+                if (matchingOption) {
+                    subjectSelect.value = matchingOption.value;
+                }
+            }
+        }
+
+        function closeNoteModal() {
+            document.getElementById('noteModal').style.display = 'none';
+            document.getElementById('noteForm').reset();
+        }
+
+        function saveNote(e) {
+            e.preventDefault();
+            const subject = document.getElementById('noteSubject').value;
+            const content = document.getElementById('noteContent').value;
+            
+            if (!subject || !content) {
+                alert('Please fill in both subject and notes.');
+                return;
+            }
+            
+            const note = {
+                id: Date.now(),
+                subject,
+                content,
+                date: new Date().toLocaleString()
+            };
+            
+            notes.push(note);
+            saveNotesToStorage();
+            updateNotesDisplay();
+            closeNoteModal();
+            
+            addNotification(`Note added for ${subject}`);
+        }
+
+        function updateNotesDisplay() {
+            const notesGrid = document.getElementById('notesGrid');
+            notesGrid.innerHTML = '';
+            
+            notes.forEach(note => {
+                const noteCard = document.createElement('div');
+                noteCard.className = 'note-card';
+                noteCard.innerHTML = `
+                    <div class="note-header">
+                        <div class="note-subject">${note.subject}</div>
+                        <div class="note-date">${note.date}</div>
+                    </div>
+                    <div class="note-content">${note.content}</div>
+                    <button class="delete-note" data-id="${note.id}">X</button>
+                `;
+                
+                noteCard.querySelector('.delete-note').addEventListener('click', () => deleteNote(note.id));
+                notesGrid.appendChild(noteCard);
+            });
+        }
+
+        function deleteNote(noteId) {
+            notes = notes.filter(note => note.id !== noteId);
+            saveNotesToStorage();
+            updateNotesDisplay();
+            addNotification('Note deleted');
+        }
+
+        function parseTime(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 100 + minutes;
+        }
+
+        function getDayName(dayIndex) {
+            const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            return days[dayIndex];
+        }
+    </script>
+</body>
+</html>
